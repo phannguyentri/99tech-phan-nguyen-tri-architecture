@@ -1,135 +1,160 @@
-# Score Tracking API Service Specification
+# Score Tracking API with Vue 3 Frontend
 
-## Overview
-This document outlines the specification for a real-time score tracking API service. The service will enable live updates to a scoreboard displaying the top 10 user scores on a website, while ensuring secure score updates and preventing unauthorized score manipulation.
+This is a full-stack application for tracking user scores with real-time updates, built with Node.js, Express, MongoDB, Socket.IO, and Vue 3 + Vite.
 
-## Architecture
+## Project Components
 
-### System Components
-1. **Frontend Application**
-   - User interface displaying the scoreboard
-   - Handles user actions that generate score updates
-   - Communicates with the API server
+### Backend (Node.js + Express + MongoDB)
+- RESTful API for user authentication and score management
+- Real-time updates with Socket.IO
+- MongoDB database for data storage
+- JWT authentication for secure API access
+- Score validation and leaderboard generation
 
-2. **API Server (Node.js)**
-   - RESTful API endpoints for score updates and retrieval
-   - WebSocket server for real-time updates
-   - Authentication and authorization layer
-   - Score validation logic
+### Frontend (Vue 3 + Vite)
+- Modern Vue 3 application with Composition API
+- Fast development with Vite
+- Real-time leaderboard updates with Socket.IO
+- User authentication with JWT
+- Responsive design with intuitive UI
+- Tabbed interface for login/register
+- Conditional UI elements based on authentication state
 
-3. **Database Layer**
-   - Stores user data and scores
-   - Optimized for quick retrieval of top scores
+## Project Setup
 
-## Technical Stack
+### Backend Setup
 
-### Backend (API Server)
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Real-time Communication**: Socket.IO
-- **Authentication**: JSON Web Tokens (JWT)
-- **Database**: MongoDB (with Mongoose ODM)
-- **API Documentation**: Swagger/OpenAPI
+```bash
+# Install dependencies
+npm install
 
-### Database Schema
+# Start development server
+npm run dev
 
-```javascript
-// User Schema
-{
-  userId: String,          // Unique identifier
-  username: String,        // Display name
-  email: String,           // For authentication
-  password: String,        // Hashed password
-  score: Number,           // Current score
-  lastActivity: Date,      // Timestamp for monitoring
-  createdAt: Date,         // Account creation time
-  updatedAt: Date          // Last update time
-}
-
-// Activity Log Schema (Optional)
-{
-  userId: String,          // Reference to User
-  action: String,          // Type of action performed
-  scoreChange: Number,     // Points added
-  timestamp: Date          // When action occurred
-}
+# Start production server
+npm start
 ```
 
-## API Endpoints
+### Frontend Setup
 
-### Authentication
-- **POST /api/auth/register** - Create new user account
-- **POST /api/auth/login** - Authenticate user and issue JWT
+```bash
+# Navigate to frontend directory
+cd frontend-vite
 
-### Score Management
-- **GET /api/scores/leaderboard** - Get top 10 scores
-- **POST /api/scores/update** - Update user score (authenticated)
-- **GET /api/scores/user/:userId** - Get specific user's score
+# Install dependencies
+npm install
 
-## Execution Flow
+# Start development server
+npm run dev
 
-```
-[User Action] → [Frontend] → [API Authentication] → [Score Validation] → [Database Update] → [WebSocket Broadcast] → [Frontend Update]
-```
-
-1. User completes an action on the website
-2. Frontend sends authenticated API request to update score
-3. API server validates the request and user authorization
-4. Score is updated in the database
-5. New leaderboard is calculated
-6. Real-time update is broadcast via WebSockets to all connected clients
-7. Frontend updates the scoreboard display
-
-## Security Considerations
-
-### Authentication Flow
-1. Users register/login to receive a JWT token
-2. All score update requests must include this valid token
-3. Server validates token before processing any score changes
-
-### Anti-Abuse Measures
-1. Rate limiting to prevent spam requests
-2. Score validation logic to detect impossible score jumps
-3. Activity logging for audit purposes
-4. IP tracking to prevent multiple accounts abuse
-
-### Data Validation
-All incoming requests are validated for:
-- Data format and type correctness
-- Score change reasonability
-- Authentication and authorization
-
-## WebSocket Implementation
-The real-time updates will be implemented using Socket.IO:
-
-```javascript
-// Server-side code
-io.on('connection', (socket) => {
-  // Send current leaderboard on connection
-  socket.emit('leaderboard', getCurrentLeaderboard());
-  
-  // When scores are updated, broadcast to all clients
-  socket.on('score-updated', () => {
-    io.emit('leaderboard', getCurrentLeaderboard());
-  });
-});
+# Build for production
+npm run build
 ```
 
-## Scaling Considerations
-1. Horizontal scaling of API servers behind load balancer
-2. Database indexing for fast leaderboard queries
-3. Caching layer for frequently accessed leaderboard data
-4. Message queue for processing score updates under high load
+## Docker Setup
 
-## Implementation Recommendations
-1. Implement comprehensive testing (unit, integration, load tests)
-2. Set up monitoring for API performance and abuse patterns
-3. Create Docker containers for easy deployment
-4. Implement CI/CD pipeline for automated testing and deployment
+The entire application can be run using Docker and Docker Compose:
 
-## Improvement Opportunities
-1. Add analytics to track user engagement patterns
-2. Implement more granular permissions system
-3. Add tournament or time-based leaderboards
-4. Develop an admin dashboard for monitoring and management
-5. Consider implementing a microservices approach for larger scale
+```bash
+# Build and start all services
+docker-compose up
+
+# Build and start in detached mode
+docker-compose up -d
+
+# Stop all services
+docker-compose down
+```
+
+The application will be available at:
+- Frontend: http://localhost:8080
+- Backend API: http://localhost:3000
+
+## Features
+
+- User authentication (login/register) with tabbed interface
+- Automatic tab switching after successful registration
+- Score tracking and updates with real-time validation
+- Real-time leaderboard updates with Socket.IO
+- Responsive design with conditional UI elements
+- Modern Vue 3 Composition API implementation
+- Dockerized deployment for easy setup
+- JWT-based authentication for secure API access
+- User dashboard that appears only after authentication
+- Logout functionality to return to login screen
+
+## Application Flow
+
+The application follows a structured flow for user interactions:
+
+1. **Authentication Flow**:
+   - Users can register with email and password
+   - After successful registration, automatically switches to login tab
+   - Login validates credentials and generates JWT token
+   - JWT token is stored in localStorage for persistent sessions
+
+2. **Score Update Flow**:
+   - Authenticated users can update their scores
+   - Score changes are validated on the server
+   - After validation, the user's score is updated in the database
+   - The updated score and leaderboard are returned in the API response
+   - The client updates the local UI with the new data
+
+3. **Real-time Updates Flow**:
+   - All clients connect to Socket.IO server
+   - Clients listen for 'leaderboard' events
+   - When a score is updated, the server broadcasts the updated leaderboard
+   - All connected clients receive the update and refresh their UI
+
+For detailed flow diagrams, see the `diagram.md` file in the project root.
+
+## Project Structure
+
+```
+/
+├── models/             # Mongoose models
+├── routes/             # API routes
+├── middleware/         # Middleware functions
+├── public/             # Static files
+├── frontend-vite/      # Vue 3 + Vite frontend
+│   ├── src/            # Frontend source code
+│   │   ├── components/ # Vue components
+│   │   ├── views/      # Page views
+│   │   ├── router/     # Vue Router configuration
+│   │   ├── services/   # API services
+│   │   └── assets/     # Static assets
+│   ├── public/         # Public static assets
+│   └── ...
+├── Dockerfile          # Backend Dockerfile
+├── frontend-vite/Dockerfile # Frontend Dockerfile
+├── docker-compose.yml  # Docker Compose configuration
+├── diagram.md          # Flow diagrams
+└── server.js           # Main application file
+```
+
+## Development
+
+The development server is configured to proxy API requests to the backend server running on port 3000. Make sure your backend server is running before starting the frontend development server.
+
+The Vue 3 + Vite frontend uses the Composition API for better code organization and maintainability. Socket.IO is integrated for real-time updates to the leaderboard.
+
+## Production
+
+When you build the frontend project with `npm run build`, the output will be placed in the `dist` directory, which is served by Nginx in the Docker setup. The Docker configuration includes:
+
+- Multi-stage build for the frontend to optimize image size
+- Nginx configuration for serving the static files
+- Node.js container for the backend API
+- MongoDB container for data persistence
+
+## Why Vue 3 + Vite?
+
+Vue 3 with Vite offers several advantages over Vue 2 with Webpack:
+
+1. **Composition API**: More flexible and maintainable code organization
+2. **Faster development**: Vite provides instant server start and hot module replacement
+3. **TypeScript support**: Better type checking and developer experience
+4. **Smaller bundle size**: Vue 3 is more lightweight than Vue 2
+5. **Better performance**: Improved reactivity system and rendering performance
+6. **Simpler configuration**: Less boilerplate and configuration needed
+7. **Future-proof**: Latest features and long-term support

@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  # MongoDB service
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Node.js application
+  api:
+    build: .
+    container_name: score-api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://mongodb:27017/score-tracker
+      - JWT_SECRET=change_this_in_production
+      - JWT_EXPIRES_IN=24h
+      - FRONTEND_URL=http://localhost:8080
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX=100
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Vue.js frontend
+  frontend:
+    build: ./frontend-vite
+    container_name: score-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb_data: 

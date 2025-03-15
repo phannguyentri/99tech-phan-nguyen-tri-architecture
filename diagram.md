@@ -12,6 +12,7 @@
        │                              │                              │                              │
        │  2. Send score update        │                              │                              │
        │  request with JWT token      │                              │                              │
+       │  and scoreChange value       │                              │                              │
        │ ─────────────────────────────>                              │                              │
        │                              │                              │                              │
        │                              │  3. Validate JWT token       │                              │
@@ -30,14 +31,19 @@
        │                              │ <─────────────────────────────                              │
        │                              │                              │                              │
        │  8. Return API response      │                              │                              │
-       │  with success status         │                              │                              │
+       │  with success status,        │                              │                              │
+       │  newScore and leaderboard    │                              │                              │
        │ <─────────────────────────────                              │                              │
        │                              │                              │                              │
-       │                              │  9. Broadcast updated        │                              │
-       │                              │  leaderboard via WebSocket   │                              │
+       │  9. Update local user        │                              │                              │
+       │  score and leaderboard       │                              │                              │
+       │                              │                              │                              │
+       │                              │  10. Broadcast updated       │                              │
+       │                              │  leaderboard via Socket.IO   │                              │
+       │                              │  with 'leaderboard' event    │                              │
        │                              │ ─────────────────────────────────────────────────────────────>
        │                              │                              │                              │
-       │                              │                              │                              │  10. Update UI
+       │                              │                              │                              │  11. Update UI
        │                              │                              │                              │  with new data
        │                              │                              │                              │
        │                              │                              │                              │
@@ -102,47 +108,54 @@
 
 ```
 ┌─────────────┐                ┌─────────────┐                ┌─────────────┐
-│  Client 1   │                │  WebSocket  │                │  Client 2   │
+│  Client 1   │                │  Socket.IO  │                │  Client 2   │
 │  (Browser)  │                │   Server    │                │  (Browser)  │
 └──────┬──────┘                └──────┬──────┘                └──────┬──────┘
        │                              │                              │
-       │  1. Connect to WebSocket     │                              │
+       │  1. Connect to Socket.IO     │                              │
        │ ─────────────────────────────>                              │
        │                              │                              │
-       │                              │                              │  2. Connect to WebSocket
+       │                              │                              │  2. Connect to Socket.IO
        │                              │ <─────────────────────────────
        │                              │                              │
-       │  3. Subscribe to             │                              │
-       │  leaderboard updates         │                              │
+       │  3. Listen for               │                              │
+       │  'leaderboard' events        │                              │
        │ ─────────────────────────────>                              │
        │                              │                              │
-       │                              │                              │  4. Subscribe to
-       │                              │                              │  leaderboard updates
+       │                              │                              │  4. Listen for
+       │                              │                              │  'leaderboard' events
        │                              │ <─────────────────────────────
        │                              │                              │
        │  5. Score update by          │                              │
-       │  Client 1                    │                              │
+       │  Client 1 via REST API       │                              │
        │ ─────────────────────────────>                              │
        │                              │                              │
-       │  6. Confirmation             │                              │
+       │  6. Confirmation with        │                              │
+       │  updated score and           │                              │
+       │  leaderboard                 │                              │
        │ <─────────────────────────────                              │
        │                              │                              │
-       │                              │  7. Broadcast updated        │
+       │  7. Update local UI          │                              │
+       │  with new data               │                              │
+       │                              │                              │
+       │                              │  8. Broadcast updated        │
        │                              │  leaderboard to all clients  │
+       │                              │  with 'leaderboard' event    │
        │                              │                              │
-       │  8. Receive update           │                              │
+       │  9. Receive update           │                              │
        │ <─────────────────────────────                              │
        │                              │                              │
-       │                              │                              │  9. Receive update
+       │                              │                              │  10. Receive update
        │                              │ ─────────────────────────────>
        │                              │                              │
-       │  10. Update UI               │                              │
-       │  with new data               │                              │
-       │                              │                              │  11. Update UI
+       │  11. Update UI if needed     │                              │
+       │  (already updated from       │                              │
+       │  direct API response)        │                              │
+       │                              │                              │  12. Update UI
        │                              │                              │  with new data
        │                              │                              │
 ┌──────┴──────┐                ┌──────┴──────┐                ┌──────┴──────┐
-│  Client 1   │                │  WebSocket  │                │  Client 2   │
+│  Client 1   │                │  Socket.IO  │                │  Client 2   │
 │  (Browser)  │                │   Server    │                │  (Browser)  │
 └─────────────┘                └─────────────┘                └─────────────┘
 ``` 
