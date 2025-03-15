@@ -7,13 +7,16 @@
       <router-view />
     </main>
     <footer>
-      <p>&copy; 2023 Score Tracking App</p>
+      <p>&copy; {{ currentYear }} Score Tracking App</p>
     </footer>
   </div>
 </template>
 
 <script setup>
 // Using the Composition API with setup script
+import { ref, onMounted } from 'vue';
+
+const currentYear = ref(new Date().getFullYear());
 </script>
 
 <style>
