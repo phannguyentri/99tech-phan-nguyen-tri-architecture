@@ -10,7 +10,7 @@
 </template>
 
 <script setup>
-// Composition API - không cần export default
+// Composition API - no need for export default
 </script>
 
 <style>

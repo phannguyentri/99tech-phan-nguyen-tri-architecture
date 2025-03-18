@@ -2,24 +2,21 @@ const jwt = require('jsonwebtoken');
 
 /**
  * Authentication middleware
- * Verifies JWT token from Authorization header
+ * Verifies JWT token from cookies
  * Adds userId to request object if token is valid
  */
 module.exports = (req, res, next) => {
   try {
-    // Get token from header
-    const authHeader = req.headers.authorization;
+    // Get token from cookies instead of Authorization header
+    const token = req.cookies.access_token;
     
-    // Check if header exists and has correct format
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Check if token exists
+    if (!token) {
       return res.status(401).json({ 
         success: false,
         message: 'No authentication token provided' 
       });
     }
-    
-    // Extract token from header
-    const token = authHeader.split(' ')[1];
     
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

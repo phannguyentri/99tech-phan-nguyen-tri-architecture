@@ -46,6 +46,9 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { io } from 'socket.io-client'
 
+// Ensure axios sends cookies with each request
+axios.defaults.withCredentials = true;
+
 const router = useRouter()
 const user = ref(null)
 const leaderboard = ref([])
@@ -55,69 +58,97 @@ const updateMessage = ref(null)
 let socket = null
 
 onMounted(async () => {
-  // Get user from localStorage
-  const userStr = localStorage.getItem('user')
-  if (userStr) {
-    user.value = JSON.parse(userStr)
-  }
-  
-  // Get token for API requests
-  const token = localStorage.getItem('token')
-  if (!token) {
-    router.push('/')
-    return
-  }
-  
-  // Set default authorization header for all requests
-  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-  
-  // Connect to socket.io
-  socket = io()
-  
-  // Listen for leaderboard updates
-  socket.on('leaderboard', (data) => {
-    leaderboard.value = data
+  try {
+    // Check authentication status
+    const response = await axios.get('/api/auth/me');
     
-    // Update user score if they're in the leaderboard
-    const currentUser = data.find(player => player.username === user.value?.username)
-    if (currentUser) {
-      user.value.score = currentUser.score
-      localStorage.setItem('user', JSON.stringify(user.value))
-    }
-  })
-  
-  // Fetch initial leaderboard
-  await fetchLeaderboard()
+    // Get user data from response
+    user.value = response.data.user;
+    
+    // Save user data in localStorage for UI display
+    localStorage.setItem('user', JSON.stringify(user.value));
+    
+    // Connect to socket.io
+    socket = io({
+      withCredentials: true // Ensure cookies are sent with socket connection
+    });
+    
+    // Listen for leaderboard updates
+    socket.on('leaderboard', (data) => {
+      leaderboard.value = data;
+      
+      // Update user score if they're in the leaderboard
+      const currentUser = data.find(player => player.username === user.value?.username);
+      if (currentUser) {
+        user.value.score = currentUser.score;
+        localStorage.setItem('user', JSON.stringify(user.value));
+      }
+    });
+    
+    // Fetch initial leaderboard
+    await fetchLeaderboard();
+  } catch (error) {
+    console.error('Auth error:', error);
+    // Redirect to login if not authenticated
+    router.push('/');
+  }
 })
 
 onBeforeUnmount(() => {
   // Disconnect socket when component is destroyed
   if (socket) {
-    socket.disconnect()
+    socket.disconnect();
   }
 })
 
+// Intercept 401 responses for token refresh
+axios.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+    
+    // If error is 401 (Unauthorized) and we haven't tried refreshing yet
+    if (error.response.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        // Call refresh token endpoint
+        await axios.post('/api/auth/refresh-token');
+        
+        // Retry the original request
+        return axios(originalRequest);
+      } catch (refreshError) {
+        // If refresh fails, redirect to login
+        router.push('/');
+        return Promise.reject(refreshError);
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
 const fetchLeaderboard = async () => {
   try {
-    loading.value = true
-    error.value = null
+    loading.value = true;
+    error.value = null;
     
-    const response = await axios.get('/api/scores/leaderboard')
-    leaderboard.value = response.data.leaderboard
+    const response = await axios.get('/api/scores/leaderboard');
+    leaderboard.value = response.data.leaderboard;
     
   } catch (err) {
-    error.value = 'Failed to load leaderboard. Please try again.'
-    console.error(err)
+    error.value = 'Failed to load leaderboard. Please try again.';
+    console.error(err);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 const updateScore = async () => {
   try {
-    updateMessage.value = null
+    updateMessage.value = null;
     
-    const response = await axios.post('/api/scores/update', { scoreChange: 10 })
+    const response = await axios.post('/api/scores/update', { scoreChange: 10 });
     
     updateMessage.value = {
       type: 'success',
@@ -125,12 +156,12 @@ const updateScore = async () => {
     }
     
     // Update user data
-    user.value.score = response.data.newScore
-    localStorage.setItem('user', JSON.stringify(user.value))
+    user.value.score = response.data.newScore;
+    localStorage.setItem('user', JSON.stringify(user.value));
     
     // Update leaderboard if available in response
     if (response.data.leaderboard) {
-      leaderboard.value = response.data.leaderboard
+      leaderboard.value = response.data.leaderboard;
     }
     
   } catch (err) {
@@ -141,16 +172,31 @@ const updateScore = async () => {
   }
 }
 
-const logout = () => {
-  // Clear localStorage
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
-  
-  // Clear axios default header
-  delete axios.defaults.headers.common['Authorization']
-  
-  // Redirect to home
-  router.push('/')
+const logout = async () => {
+  try {
+    // Call logout endpoint to clear server-side refresh token
+    await axios.post('/api/auth/logout');
+    
+    // Clear localStorage
+    localStorage.removeItem('user');
+    
+    // Reset Axios interceptors to avoid reusing stale handlers
+    axios.interceptors.response.handlers = [];
+    
+    // Force reload the page to clear all states and cookies in browser
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 100);
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Even if logout fails on server, still reset and redirect
+    localStorage.removeItem('user');
+    
+    // Force reload the page rather than router push
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 100);
+  }
 }
 </script>
 

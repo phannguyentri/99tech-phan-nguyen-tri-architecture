@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema({
     default: 0,
     min: 0
   },
+  refreshToken: {
+    type: String,
+    default: null
+  },
   lastActivity: {
     type: Date,
     default: Date.now

@@ -1,37 +1,37 @@
-# Hướng dẫn cài đặt và chạy dự án Score Tracking API
+# Setup Guide for Score Tracking API
 
-## Yêu cầu hệ thống
+## System Requirements
 
-- Node.js (phiên bản 18.0.0 trở lên)
-- MongoDB (phiên bản 4.0 trở lên)
-- npm hoặc yarn
+- Node.js (version 18.0.0 or later)
+- MongoDB (version 4.0 or later)
+- npm or yarn
 
-## Các bước cài đặt
+## Installation Steps
 
-### 1. Clone dự án
+### 1. Clone the project
 
 ```bash
 git clone <repository-url>
 cd score-tracking-api
 ```
 
-### 2. Cài đặt các dependencies
+### 2. Install dependencies
 
 ```bash
 npm install
-# hoặc
+# or
 yarn install
 ```
 
-### 3. Cấu hình môi trường
+### 3. Configure environment
 
-Tạo file `.env` từ file `.env.example` (hoặc sử dụng file `.env` đã có):
+Create a `.env` file from `.env.example` (or use the existing `.env` file):
 
 ```bash
-cp .env.example .env  # Nếu bạn có file .env.example
+cp .env.example .env  # If you have .env.example file
 ```
 
-Chỉnh sửa file `.env` để phù hợp với môi trường của bạn:
+Edit the `.env` file to match your environment:
 
 ```
 # Server Configuration
@@ -53,61 +53,61 @@ RATE_LIMIT_WINDOW_MS=900000  # 15 minutes
 RATE_LIMIT_MAX=100  # 100 requests per window
 ```
 
-### 4. Khởi động MongoDB
+### 4. Start MongoDB
 
-Đảm bảo MongoDB đang chạy trên máy của bạn. Nếu bạn chưa cài đặt MongoDB, bạn có thể tải và cài đặt từ [trang chủ MongoDB](https://www.mongodb.com/try/download/community).
+Make sure MongoDB is running on your machine. If you haven't installed MongoDB yet, you can download and install it from the [MongoDB website](https://www.mongodb.com/try/download/community).
 
-Hoặc sử dụng Docker:
+Or use Docker:
 
 ```bash
 docker run -d -p 27017:27017 --name mongodb mongo
 ```
 
-### 5. Chạy ứng dụng
+### 5. Run the application
 
-#### Chế độ phát triển (với nodemon - tự động khởi động lại khi có thay đổi)
+#### Development mode (with nodemon - auto restart when changes are detected)
 
 ```bash
 npm run dev
-# hoặc
+# or
 yarn dev
 ```
 
-#### Chế độ sản xuất
+#### Production mode
 
 ```bash
 npm start
-# hoặc
+# or
 yarn start
 ```
 
-Ứng dụng sẽ chạy tại `http://localhost:3000` (hoặc cổng được cấu hình trong file `.env`).
+The application will run at `http://localhost:3000` (or the port configured in the `.env` file).
 
-## Sử dụng ứng dụng
+## Using the Application
 
-### Giao diện người dùng
+### User Interface
 
-Truy cập `http://localhost:3000` để mở giao diện người dùng đơn giản để kiểm tra API.
+Access `http://localhost:3000` to open a simple user interface to test the API.
 
 ### API Endpoints
 
-#### Xác thực
+#### Authentication
 
-- **POST /api/auth/register** - Đăng ký người dùng mới
-- **POST /api/auth/login** - Đăng nhập và nhận JWT token
-- **GET /api/auth/me** - Lấy thông tin người dùng hiện tại (yêu cầu xác thực)
+- **POST /api/auth/register** - Register a new user
+- **POST /api/auth/login** - Login and receive JWT token
+- **GET /api/auth/me** - Get current user information (authentication required)
 
-#### Điểm số
+#### Scores
 
-- **GET /api/scores/leaderboard** - Lấy top 10 điểm cao nhất
-- **POST /api/scores/update** - Cập nhật điểm số người dùng (yêu cầu xác thực)
-- **GET /api/scores/user/:userId** - Lấy điểm số của người dùng cụ thể
+- **GET /api/scores/leaderboard** - Get top 10 highest scores
+- **POST /api/scores/update** - Update user score (authentication required)
+- **GET /api/scores/user/:userId** - Get score of a specific user
 
-### Sử dụng WebSocket
+### Using WebSocket
 
-Ứng dụng sử dụng Socket.IO để cập nhật bảng điểm theo thời gian thực. Khi có người dùng cập nhật điểm số, tất cả các client đang kết nối sẽ nhận được bảng điểm mới.
+The application uses Socket.IO to update the leaderboard in real-time. When a user updates their score, all connected clients will receive the new leaderboard.
 
-## Cấu trúc dự án
+## Project Structure
 
 ```
 score-tracking-api/
@@ -127,19 +127,19 @@ score-tracking-api/
 └── server.js           # Main application file
 ```
 
-## Triển khai với Docker
+## Deployment with Docker
 
-Dự án đã bao gồm Dockerfile để dễ dàng triển khai. Để sử dụng Docker:
+The project includes a Dockerfile for easy deployment. To use Docker:
 
 ```bash
 # Build Docker image
 docker build -t score-tracking-api .
 
-# Chạy container
+# Run container
 docker run -p 3000:3000 --env-file .env score-tracking-api
 ```
 
-Hoặc sử dụng Docker Compose (nếu bạn đã tạo file docker-compose.yml):
+Or use Docker Compose (if you have created a docker-compose.yml file):
 
 ```bash
 docker-compose up
